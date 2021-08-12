@@ -1,12 +1,13 @@
 package client;
 
 import config.ServiceConfig;
+import io.restassured.http.ContentType;
 import io.restassured.http.Method;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import response.BaseResponse;
 
-import static io.restassured.RestAssured.*;
+import static io.restassured.RestAssured.given;
 
 public class HttpClient {
 
@@ -33,7 +34,10 @@ public class HttpClient {
     private static BaseResponse sendRequest(Method method, String endpoint, String body) {
         String url = ServiceConfig.HOST + endpoint;
         RequestSpecification spec = given();
-        if (body != null) spec.body(body);
+        if (body != null) {
+            spec.contentType(ContentType.JSON);
+            spec.body(body);
+        }
         Response rawResponse = spec.request(method, url);
         return new BaseResponse(rawResponse);
     }

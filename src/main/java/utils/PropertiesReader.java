@@ -14,7 +14,7 @@ public class PropertiesReader {
         try (InputStream input = new FileInputStream(filePath)) {
             this.props = new Properties();
             this.props.load(input);
-        } catch(Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
