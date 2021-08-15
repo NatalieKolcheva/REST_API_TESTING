@@ -6,6 +6,9 @@ public class Genre {
     public String genreName;
     public String genreDescription;
 
+    public Genre() {
+    }
+
     public Genre(Integer genreId, String genreName, String genreDescription) {
         this.genreId = genreId;
         this.genreName = genreName;
