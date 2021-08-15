@@ -1,5 +1,9 @@
+import com.google.gson.Gson;
 import entity.Genre;
 import entity.ListOptions;
+import io.qameta.allure.Attachment;
+import io.qameta.allure.Step;
+import io.restassured.response.ResponseBody;
 import org.apache.log4j.Logger;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -10,11 +14,110 @@ public class GenreTest {
 
     private static final Logger LOG = Logger.getLogger(GenreTest.class);
 
-    private Integer testID;
 
-
-    @Test(description = "Positive, GET all Genre ", priority = 1)
+    @Test(description = "Positive, GET all Genre")
     public void getAllGenrePositive() {
+        ListOptions listOptions = new ListOptions(
+                "asc",
+                1,
+                true,
+                2,
+                "genreId"
+        );
+        BaseResponse baseResponse = getAllGenres(listOptions);
+        verifyResponseStatus(baseResponse.getStatusCode(), 200);
+    }
+
+    @Test(description = "Negative, GET all Genre")
+    public void getAllGenreNegative() {
+        ListOptions listOptions = new ListOptions(
+                "asc",
+                1,
+                true,
+                1,
+                "test"
+        );
+        BaseResponse baseResponse = getAllGenres(listOptions);
+        verifyResponseStatus(baseResponse.getStatusCode(), 400);
+    }
+
+    @Test(description = "Positive, POST  Genre")
+    public void postGenrePositive() {
+        Genre genre = new Genre(
+                getMaxId() + 1,
+                "test1",
+                "test2"
+        );
+        BaseResponse baseResponse = createNewGenre(genre);
+        verifyResponseStatus(baseResponse.getStatusCode(), 201);
+    }
+
+    @Test(description = "Positive, GET Genre by ID")
+    public void GetByIdGenrePositive() {
+        BaseResponse baseResponse = getGenreById(getMaxId());
+        verifyResponseStatus(baseResponse.getStatusCode(), 200);
+    }
+
+    @Test(description = "Negative, GET Genre by ID")
+    public void GetByIdGenreNegative() {
+        BaseResponse baseResponse = getGenreById(0);
+        verifyResponseStatus(baseResponse.getStatusCode(), 404);
+    }
+
+    @Test(description = "Positive, Delete Genre")
+    public void deleteGenrePositive() {
+        BaseResponse baseResponse = deleteGenreById(getMaxId());
+        verifyResponseStatus(baseResponse.getStatusCode(), 204);
+    }
+
+
+    @Attachment("Request body")
+    public String getRequestBody(Object requestBody) {
+        return new Gson().toJson(requestBody);
+    }
+
+    @Attachment("Response body")
+    public String getResponseBody(ResponseBody responseBody) {
+        return responseBody.asString();
+    }
+
+    @Step("Get all genres")
+    public BaseResponse getAllGenres(ListOptions options) {
+        LOG.info("Send request with options:  " + getRequestBody(options));
+        BaseResponse baseResponse = new GenreService().getGenres(options);
+        LOG.info("Got response: " + getResponseBody(baseResponse.getBody()));
+        return baseResponse;
+    }
+
+    @Step("Get genre by id")
+    public BaseResponse getGenreById(Integer id) {
+        BaseResponse baseResponse = new GenreService().getGenre(id);
+        LOG.info("Got response: " + getResponseBody(baseResponse.getBody()));
+        return baseResponse;
+    }
+
+    @Step("Delete genre by id")
+    public BaseResponse deleteGenreById(Integer id) {
+        BaseResponse baseResponse = new GenreService().deleteGenre(id);
+        LOG.info("Got response: " + baseResponse.getStatusCode());
+        return baseResponse;
+    }
+
+    @Step("Create new genre")
+    public BaseResponse createNewGenre(Genre genre) {
+        LOG.info("Send request with options:  " + getRequestBody(genre));
+        BaseResponse baseResponse = new GenreService().createGenre(genre);
+        LOG.info("Got response: " + getResponseBody(baseResponse.getBody()));
+        return baseResponse;
+    }
+
+    @Step("Verify response status")
+    public void verifyResponseStatus(int actual, int expected) {
+        Assert.assertEquals(actual, expected, "Invalid status code.");
+    }
+
+    @Step("Get MAX Id")
+    public Integer getMaxId() {
         ListOptions listOptions = new ListOptions(
                 "desc",
                 1,
@@ -25,56 +128,7 @@ public class GenreTest {
         BaseResponse baseResponse = new GenreService().getGenres(listOptions);
         LOG.info("Got response: " + baseResponse.getBodyAsString());
         Genre[] genres = baseResponse.getBody().as(Genre[].class);
-        testID = genres[0].genreId + 1;
-        Assert.assertEquals(baseResponse.getStatusCode(), 200, "Invalid status code.");
+        return genres[0].genreId;
     }
-
-    @Test(description = "Negative, GET all Genre ", priority = 2)
-    public void getAllGenreNegative() {
-        ListOptions listOptions = new ListOptions(
-                "test",
-                0,
-                true,
-                0,
-                "test"
-        );
-        BaseResponse baseResponse = new GenreService().getGenres(listOptions);
-        LOG.info("Got response: " + baseResponse.getBodyAsString());
-        Assert.assertEquals(baseResponse.getStatusCode(), 400, "Invalid status code.");
-    }
-
-    @Test(description = "Positive, POST  Genre ", priority = 3)
-    public void postGenrePositive() {
-        Genre genre = new Genre(
-                testID,
-                "test1",
-                "test2"
-        );
-        BaseResponse baseResponse = new GenreService().createGenre(genre);
-        LOG.info("Got response: " + baseResponse.getBodyAsString());
-        Assert.assertEquals(baseResponse.getStatusCode(), 201, "Invalid status code.");
-    }
-
-    @Test(description = "Positive, GET Genre by ID", priority = 4)
-    public void GetByIdGenrePositive() {
-        BaseResponse baseResponse = new GenreService().getGenre(testID);
-        LOG.info("Got response: " + baseResponse.getBodyAsString());
-        Assert.assertEquals(baseResponse.getStatusCode(), 200, "Invalid status code.");
-    }
-
-    @Test(description = "Positive, Delete Genre ", priority = 5)
-    public void deleteGenrePositive() {
-        BaseResponse baseResponse = new GenreService().deleteGenre(testID);
-        LOG.info("Got response: " + baseResponse.getStatusCode());
-        Assert.assertEquals(baseResponse.getStatusCode(), 204, "Invalid status code.");
-    }
-
-    @Test(description = "Negative, GET Genre by ID", priority = 6)
-    public void GetByIdGenreNegative() {
-        BaseResponse baseResponse = new GenreService().getGenre(testID);
-        LOG.info("Got response code: " + baseResponse.getStatusCode());
-        Assert.assertEquals(baseResponse.getStatusCode(), 404, "Invalid status code.");
-    }
-
 
 }
