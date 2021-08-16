@@ -31,8 +31,20 @@ public class GenreService {
         return HttpClient.post(endpoint, bodyJson);
     }
 
+    public BaseResponse updateGenre(Genre genre) {
+        String endpoint = new EndpointBuilder().pathParameter("genre").get();
+        String bodyJson = new Gson().toJson(genre);
+        return HttpClient.put(endpoint, bodyJson);
+    }
+
     public BaseResponse deleteGenre(int genreId) {
         String endpoint = new EndpointBuilder().pathParameter("genre").pathParameter(genreId).get();
         return HttpClient.delete(endpoint);
+    }
+
+    public BaseResponse getSearchGenres(String query) {
+        EndpointBuilder endpoint = new EndpointBuilder().pathParameter("genres/search");
+        endpoint.queryParam("query", query);
+        return HttpClient.get(endpoint.get());
     }
 }

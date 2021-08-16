@@ -8,12 +8,14 @@ public class ListOptions {
     public String sortBy;
 
 
+
     public ListOptions(String orderType, int page, boolean pagination, int size, String sortBy) {
         this.orderType = orderType;
         this.page = page;
         this.pagination = pagination;
         this.size = size;
         this.sortBy = sortBy;
+
     }
 
 
