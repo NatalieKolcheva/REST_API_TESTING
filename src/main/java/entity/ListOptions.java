@@ -1,5 +1,7 @@
 package entity;
 
+import com.google.gson.Gson;
+
 public class ListOptions {
     public String orderType; // should be moved into Enum, since only 2 values exist: "asc", "desc"
     public int page;
@@ -15,8 +17,10 @@ public class ListOptions {
         this.pagination = pagination;
         this.size = size;
         this.sortBy = sortBy;
-
     }
 
-
+    @Override
+    public String toString() {
+        return new Gson().toJson(this);
+    }
 }

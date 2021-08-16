@@ -1,4 +1,3 @@
-import com.google.gson.Gson;
 import entity.Genre;
 import entity.ListOptions;
 import io.qameta.allure.Attachment;
@@ -6,8 +5,6 @@ import io.qameta.allure.Step;
 import io.restassured.response.ResponseBody;
 import org.apache.log4j.Logger;
 import org.testng.Assert;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import response.BaseResponse;
 import service.GenreService;
@@ -16,20 +13,11 @@ public class GenreTest {
 
     private static final Logger LOG = Logger.getLogger(GenreTest.class);
 
-    private Integer testId;
-
-    @BeforeMethod
-    public void before() {
-        testId = getMaxId() + 1;
+    public Integer createTestGenre() {
+        Integer testId = getMaxId() + 1;
         Genre genre = new Genre(testId, "test1", "test2");
         createNewGenre(genre);
-    }
-
-    @AfterMethod
-    public void after() {
-        if (testId != null) {
-            deleteGenreById(testId);
-        }
+        return testId;
     }
 
     @Test(description = "Positive, GET all Genre")
@@ -43,7 +31,8 @@ public class GenreTest {
         );
         BaseResponse baseResponse = getAllGenres(listOptions);
         verifyResponseStatus(baseResponse.getStatusCode(), 200);
-        verifyResponseBodyIsNotEmpty(baseResponse);
+        Genre[] genres = baseResponse.getBody().as(Genre[].class);
+        verifyResponseBodyIsNotEmpty(genres.length);
     }
 
     @Test(description = "Negative, GET all Genre")
@@ -61,7 +50,7 @@ public class GenreTest {
 
     @Test(description = "Positive, POST|DELETE Genre")
     public void postDeleteGenrePositive() {
-        Integer genreId = testId + 1;
+        Integer genreId = getMaxId() + 1;
         Genre genre = new Genre(
                 genreId,
                 "test_new",
@@ -73,8 +62,10 @@ public class GenreTest {
 
     @Test(description = "Positive, GET Genre by ID")
     public void GetByIdGenrePositive() {
+        Integer testId = createTestGenre();
         BaseResponse baseResponse = getGenreById(testId);
         verifyResponseStatus(baseResponse.getStatusCode(), 200);
+        deleteGenreById(testId);
     }
 
     @Test(description = "Negative, GET Genre by ID")
@@ -85,6 +76,7 @@ public class GenreTest {
 
     @Test(description = "Positive, PUT  Genre")
     public void putGenrePositive() {
+        Integer testId = createTestGenre();
         Genre genre = new Genre(
                 testId,
                 "test_edited",
@@ -92,10 +84,12 @@ public class GenreTest {
         );
         BaseResponse baseResponse = updateExistGenre(genre);
         verifyResponseStatus(baseResponse.getStatusCode(), 200);
+        deleteGenreById(testId);
     }
 
     @Test(description = "Negative, PUT  Genre")
     public void putGenreNegative() {
+        Integer testId = createTestGenre();
         Genre genre = new Genre(
                 testId + 2,
                 "test_edited",
@@ -103,18 +97,23 @@ public class GenreTest {
         );
         BaseResponse baseResponse = updateExistGenre(genre);
         verifyResponseStatus(baseResponse.getStatusCode(), 404);
+        deleteGenreById(testId);
     }
 
     @Test(description = "Positive, GET SEARCH Genre")
     public void getSearchGenrePositive() {
+        Integer testId = createTestGenre();
         BaseResponse baseResponse = getSearchGenre("test1");
         verifyResponseStatus(baseResponse.getStatusCode(), 200);
-        verifyResponseBodyIsNotEmpty(baseResponse);
+        Genre[] genres = baseResponse.getBody().as(Genre[].class);
+        verifyResponseBodyIsNotEmpty(genres.length);
+        deleteGenreById(testId);
     }
 
-    @Attachment("Request body")
-    public String getRequestBody(Object requestBody) {
-        return new Gson().toJson(requestBody);
+    @Test(description = "Negative, GET SEARCH Genre")
+    public void getSearchGenreNegative() {
+        BaseResponse baseResponse = getSearchGenre("te");
+        verifyResponseStatus(baseResponse.getStatusCode(), 400);
     }
 
     @Attachment("Response body")
@@ -124,7 +123,7 @@ public class GenreTest {
 
     @Step("Get all genres")
     public BaseResponse getAllGenres(ListOptions options) {
-        LOG.info("Get all genres request with options:  " + getRequestBody(options));
+        LOG.info("Get all genres request with options:  " + options);
         BaseResponse baseResponse = new GenreService().getGenres(options);
         LOG.info("Get all genres response: " + getResponseBody(baseResponse.getBody()));
         return baseResponse;
@@ -146,7 +145,7 @@ public class GenreTest {
 
     @Step("Create new genre")
     public BaseResponse createNewGenre(Genre genre) {
-        LOG.info("Create new genre request:  " + getRequestBody(genre));
+        LOG.info("Create new genre request:  " + genre);
         BaseResponse baseResponse = new GenreService().createGenre(genre);
         LOG.info("Create new genre response: " + getResponseBody(baseResponse.getBody()));
         return baseResponse;
@@ -154,7 +153,7 @@ public class GenreTest {
 
     @Step("Update exist genre")
     public BaseResponse updateExistGenre(Genre genre) {
-        LOG.info("Update exist genre request:  " + getRequestBody(genre));
+        LOG.info("Update exist genre request:  " + genre);
         BaseResponse baseResponse = new GenreService().updateGenre(genre);
         LOG.info("Update exist genre response: " + getResponseBody(baseResponse.getBody()));
         return baseResponse;
@@ -166,9 +165,8 @@ public class GenreTest {
     }
 
     @Step("Verify response is not empty")
-    public void verifyResponseBodyIsNotEmpty(BaseResponse baseResponse) {
-        Genre[] genres = baseResponse.getBody().as(Genre[].class);
-        Assert.assertTrue(genres.length > 0, "Genre response body is empty.");
+    public void verifyResponseBodyIsNotEmpty(Integer length) {
+        Assert.assertTrue(length > 0, "Genre response body is empty.");
     }
 
     @Step("Get MAX genre id")
